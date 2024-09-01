@@ -1,23 +1,25 @@
-import logo from './logo.svg';
+import SearchBar from './Components/SearchBar';
+import ResultsTable from './Components/ResultsTable';
+import React, { useState } from'react';
 import './App.css';
+import Notebutton from './Components/NoteButton';
+// import SearchAndResults from './Components/SearchAndResults';
 
 function App() {
+   const [searchTime, setSearchTime] = useState('');
+   const [searchResults, setSearchResults] = useState([]); 
+   const [totalResults, setTotalResults] = useState(0);
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h2>Global Search</h2>
       </header>
+      <Notebutton/>
+      <SearchBar setSearchTime={setSearchTime}  setSearchResults={setSearchResults} setTotalResults={setTotalResults}/>
+      <ResultsTable  searchResults={searchResults} searchTime={searchTime} totalResults={totalResults}/>
+      {/* <SearchAndResults/> */}
+
     </div>
   );
 }
