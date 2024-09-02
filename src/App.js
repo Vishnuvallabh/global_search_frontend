@@ -3,7 +3,7 @@ import ResultsTable from './Components/ResultsTable';
 import React, { useState } from'react';
 import './App.css';
 import Notebutton from './Components/NoteButton';
-// import SearchAndResults from './Components/SearchAndResults';
+
 
 function App() {
    const [searchTime, setSearchTime] = useState('');

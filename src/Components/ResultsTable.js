@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function ResultsTable({ searchResults, searchTime, totalResults }) {
   const [expandedRows, setExpandedRows] = useState({});
+
+
+  const flattenRow = (row) => {
+    const mainFields = ['RecordID', 'Name', 'Gender', 'DateOfBirth', 'Email', 'Phone'];
+    let flatRow = {};
+
+    mainFields.forEach(field => {
+      flatRow[field] = row[field] || '';
+    });
+
+    // Include additional details
+    Object.keys(row).forEach(key => {
+      if (!mainFields.includes(key)) {
+        flatRow[key] = row[key];
+      }
+    });
+
+    return flatRow;
+  };
 
   // Function to download search results as CSV
   const downloadCSV = () => {
     if (searchResults.length === 0) return;
 
-    const headers = ['RecordID', 'Name', 'Gender', 'DateOfBirth', 'Email', 'Phone'];
-    const rows = searchResults.map(row => headers.map(header => row[header]));
+    const flatResults = searchResults.map(flattenRow);
+    const headers = Object.keys(flatResults[0]);
+    const rows = flatResults.map(row => headers.map(header => row[header]));
 
     let csvContent = 'data:text/csv;charset=utf-8,'
       + headers.join(',') + '\n'
@@ -27,15 +49,67 @@ function ResultsTable({ searchResults, searchTime, totalResults }) {
   const downloadExcel = () => {
     if (searchResults.length === 0) return;
 
-    const headers = ['RecordID', 'Name', 'Gender', 'DateOfBirth', 'Email', 'Phone'];
-    const data = [headers, ...searchResults.map(row=> headers.map(header =>row[header]))];
+    const flatResults = searchResults.map(flattenRow);
+    const headers = Object.keys(flatResults[0]);
+    const data = [
+      headers,
+      ...flatResults.map(row => headers.map(header => row[header]))
+    ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Search Results');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
 
-    XLSX.writeFile(workbook, 'search_results.xlsx')
+    XLSX.writeFile(workbook, 'search_results.xlsx');
   };
+
+  // Function to download search results as PDF with key-value pairs
+// Function to download search results as PDF with key-value pairs and smaller font size
+const downloadPDF = () => {
+  if (searchResults.length === 0) return;
+
+  const doc = new jsPDF();
+  const defaultFontSize = 12; // Default font size for title
+  const smallerFontSize = 10; // Smaller font size for key-value pairs
+  const pageHeight = doc.internal.pageSize.height; // Get the height of the PDF page
+  let yPosition = 20; // Initial y position for text
+
+  // Add title to the document
+  doc.setFontSize(defaultFontSize);
+  doc.text('Search Results', 14, 10);
+
+  searchResults.forEach((row, index) => {
+    // Check if the yPosition exceeds the page height
+    if (yPosition + 20 > pageHeight) { // 20 to accommodate record header and some spacing
+      doc.addPage();
+      yPosition = 20; // Reset y position for the new page
+    }
+
+    // Print record header
+    doc.setFontSize(defaultFontSize);
+    doc.text(`Record ${index + 1}`, 14, yPosition);
+    yPosition += 10;
+
+    // Print key-value pairs
+    doc.setFontSize(smallerFontSize);
+    Object.keys(row).forEach((key) => {
+      // Check if the yPosition exceeds the page height before printing each key-value pair
+      if (yPosition + 10 > pageHeight) { // 10 to accommodate line spacing
+        doc.addPage();
+        yPosition = 20; // Reset y position for the new page
+      }
+      doc.text(`${key}: ${row[key]}`, 20, yPosition);
+      yPosition += 8; // Reduced line spacing for smaller font
+    });
+
+    yPosition += 10; // Extra space between records
+  });
+
+  doc.save('search_results.pdf');
+};
+
+
+
 
   // Toggle dropdown visibility for a row
   const toggleRow = (idx) => {
@@ -60,7 +134,7 @@ function ResultsTable({ searchResults, searchTime, totalResults }) {
         marginLeft: '10px' 
       }}>Download Excel</button>
 
-<button style={{  
+<button onClick={downloadPDF} style={{  
         fontSize: 'small', 
         padding: '5px 10px',
         marginLeft: '10px' 
