@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 
 function ResultsTable({ searchResults, searchTime, totalResults }) {
   const [expandedRows, setExpandedRows] = useState({});
@@ -23,6 +24,19 @@ function ResultsTable({ searchResults, searchTime, totalResults }) {
     document.body.removeChild(link);
   };
 
+  const downloadExcel = () => {
+    if (searchResults.length === 0) return;
+
+    const headers = ['RecordID', 'Name', 'Gender', 'DateOfBirth', 'Email', 'Phone'];
+    const data = [headers, ...searchResults.map(row=> headers.map(header =>row[header]))];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Search Results');
+
+    XLSX.writeFile(workbook, 'search_results.xlsx')
+  };
+
   // Toggle dropdown visibility for a row
   const toggleRow = (idx) => {
     setExpandedRows(prev => ({
@@ -40,7 +54,7 @@ function ResultsTable({ searchResults, searchTime, totalResults }) {
         padding: '5px 10px' 
       }}>Download CSV</button>
 
-      <button style={{  
+      <button onClick={downloadExcel} style={{  
         fontSize: 'small', 
         padding: '5px 10px',
         marginLeft: '10px' 
