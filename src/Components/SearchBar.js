@@ -111,7 +111,7 @@
 
 
 
-//Dissplay dropdown for search history
+//Display dropdown for search history
 import React, { useState, useEffect } from 'react';
 
 function SearchBar({ setSearchTime, setSearchResults, setTotalResults }) {
@@ -195,7 +195,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      {loading && <p>Loading...</p>} {/* Display loading indicator */}
+      {/* Display loading indicator */}
 
       <div style={{ marginBottom: '10px' }}>
         <select
@@ -211,6 +211,8 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults }) {
           ))}
         </select>
       </div>
+
+      
 
       {conditions.map((condition, index) => (
         <div key={index}>
@@ -252,6 +254,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults }) {
         </div>
       ))}
       <button type="submit" disabled={loading}>Search</button> {/* Disable button while loading */}
+      {loading && <p>Loading...</p>} 
     </form>
   );
 }
