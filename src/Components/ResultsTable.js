@@ -3,9 +3,15 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-function ResultsTable({ searchResults, searchTime, totalResults }) {
+function ResultsTable({ searchResults, searchTime, totalResults, page, fetchResults }) {
   const [expandedRows, setExpandedRows] = useState({});
 
+  const totalPages = Math.ceil(totalResults / 10);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    fetchResults(newPage);
+  };
 
   const flattenRow = (row) => {
     const mainFields = ['RecordID', 'Name', 'Gender', 'DateOfBirth', 'Email', 'Phone'];
@@ -15,7 +21,6 @@ function ResultsTable({ searchResults, searchTime, totalResults }) {
       flatRow[field] = row[field] || '';
     });
 
-    // Include additional details
     Object.keys(row).forEach(key => {
       if (!mainFields.includes(key)) {
         flatRow[key] = row[key];
@@ -188,6 +193,16 @@ const downloadPDF = () => {
           ))}
         </tbody>
       </table>
+      <div style={{ marginTop: '20px' }}>
+          <button onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
+          Previous
+          </button>
+          <span style={{ margin: '0 10px' }}>Page {page} of {totalPages}</span>
+          <button onClick={() => handlePageChange(page + 1)} disabled={page >= totalPages}>
+          Next
+          </button>
+      </div>
+
     </div>
   );
 }
