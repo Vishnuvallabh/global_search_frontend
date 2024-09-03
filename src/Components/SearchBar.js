@@ -161,6 +161,7 @@
 //         throw new Error('Failed to fetch search results');
 //       }
 //       const data = await response.json();
+//       console.log(data);
 //       setTotalResults(data.total_results);
 //       setSearchResults(data.results);
 //       setSearchTime(currentTime);
@@ -182,6 +183,7 @@
 //   const handleSubmit = (e) => {
 //     e.preventDefault();
 //     fetchResults();
+    
 //   };
 
 //   const handleDropdownChange = (e) => {
@@ -271,7 +273,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
     return storedQueries ? JSON.parse(storedQueries) : [];
   });
   const [selectedQuery, setSelectedQuery] = useState('');
-
+  const [noResults,setNoResults] = useState(false);
   useEffect(() => {
     fetch('http://127.0.0.1:5000/api/columns')
       .then(response => response.json())
@@ -317,6 +319,12 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       setTotalResults(data.total_results);
       setSearchResults(data.results);
       setSearchTime(currentTime);
+
+      if(data.total_results === 0) {
+        setNoResults(true);
+      } else {
+        setNoResults(false);
+      }
 
       if (!queryHistory.includes(queryString)) {
         const updatedQueryHistory = [...queryHistory, queryString];
@@ -412,6 +420,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       ))}
       <button type="submit" disabled={loading}>Search</button>
       {loading && <p>Loading...</p>}
+      {!loading && noResults && <p>No Results Found</p>}
     </form>
   );
 }
