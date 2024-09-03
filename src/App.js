@@ -1,9 +1,8 @@
 import SearchBar from './Components/SearchBar';
 import ResultsTable from './Components/ResultsTable';
 import React, { useState } from'react';
-import './App.css';
 import Notebutton from './Components/NoteButton';
-
+import './App.css';
 
 function App() {
    const [searchTime, setSearchTime] = useState('');
@@ -25,8 +24,6 @@ function App() {
       <Notebutton/>
       <SearchBar setSearchTime={setSearchTime}  setSearchResults={setSearchResults} setTotalResults={setTotalResults} setPage={setPage} page={page} />
       <ResultsTable  searchResults={searchResults} searchTime={searchTime} totalResults={totalResults} page={page}  fetchResults={fetchResults}/>
-      {/* <SearchAndResults/> */}
-
     </div>
   );
 }
