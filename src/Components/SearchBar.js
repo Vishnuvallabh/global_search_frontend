@@ -298,34 +298,44 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
 
   const fetchResults = useCallback(async (page = 1) => {
     setPage(page);
-
+  
     const currentTime = new Date().toLocaleString();
-
+  
+    // Construct query string based on whether a column is selected
     const queryString = conditions
-      .filter(condition => condition.query)
-      .map(condition => condition.query)
-      .join(` ${conditions[0]?.operator || 'AND'} `);
-    
+      .filter(condition => condition.query) // Ensure query is present
+      .map(condition => {
+        if (condition.column) {
+          // If a column is selected, search within that column
+          return `${condition.column}%20%3A%20${encodeURIComponent(condition.query)}`;
+        } else {
+          // If no column is selected, search across all columns
+          return `${encodeURIComponent(condition.query)}`;
+        }
+      })
+      .join(`%20${conditions[0]?.operator || 'AND'}%20`);
+  
     setLoading(true);
-
+  
     try {
-      const response = await fetch(`http://127.0.0.1:8000/search?query=${encodeURIComponent(queryString)}&page=${page}&per_page=10`);
+      const response = await fetch(`http://127.0.0.1:8000/search?query=${queryString}&page=${page}&per_page=10`);
       if (!response.ok) {
         throw new Error('Failed to fetch search results');
       }
       const data = await response.json();
-
+  
       console.log('API Response:', data);
       setTotalResults(data.total_results);
       setSearchResults(data.results);
       setSearchTime(currentTime);
-
-      if(data.total_results === 0) {
+  
+      if (data.total_results === 0) {
         setNoResults(true);
       } else {
         setNoResults(false);
       }
-
+  
+      // Update query history if it's not already present
       if (!queryHistory.includes(queryString)) {
         const updatedQueryHistory = [...queryHistory, queryString];
         setQueryHistory(updatedQueryHistory);
@@ -338,6 +348,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       setLoading(false);
     }
   }, [conditions, queryHistory, setPage, setSearchResults, setSearchTime, setTotalResults]);
+  
 
   useEffect(() => {
     const fetchListener = (event) => {
@@ -397,11 +408,17 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
             <input
               type="text"
               value={condition.query}
-              placeholder="Enter search query"
+              placeholder="Enter search query..."
               onChange={(e) => handleConditionChange(index, 'query', e.target.value)}
               style={{ flex: 2 }}
             />
           </div>
+
+          {index < conditions.length - 1 && (
+      <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+        <strong>{condition.operator}</strong>
+      </div>
+    )}
 
           {index === conditions.length - 1 && (
             <div style={{ marginBottom: '10px' }}>
