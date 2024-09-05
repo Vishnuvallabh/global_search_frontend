@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 
-function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage , page}) {
+function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, page }) {
   const [columns, setColumns] = useState([]);
   const [conditions, setConditions] = useState([{ column: '', query: '', operator: '' }]);
   const [loading, setLoading] = useState(false);
@@ -41,34 +39,26 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
 
   const fetchResults = useCallback(async (page = 1) => {
     setPage(page);
-  
     const currentTime = new Date().toLocaleString();
   
-    // Create a human-readable query string
+    // Create a human-readable query string for display and saving (remove space around colon)
     const readableQueryString = conditions
       .filter(condition => condition.query)
       .map(condition => {
         if (condition.column) {
-          return `${condition.column} : ${condition.query}`;
+          return `${condition.column}:${condition.query}`;  // No space before/after colon
         } else {
           return condition.query;
         }
       })
       .join(` ${conditions[0]?.operator || 'AND'} `);
   
-    // Construct API query string with special case for DateOfBirth
+    // Construct API query string (same format, just encoded for the URL)
     const apiQueryString = conditions
       .filter(condition => condition.query)
       .map(condition => {
-        if (condition.column === 'DateOfBirth') {
-          // Special encoding for DateOfBirth range query
-          const queryString = condition.query.includes('[') && condition.query.includes(']')
-            ? `${condition.column}%3A%5B${condition.query.replace(/\s/g, '%20').replace('[', '').replace(']', '')}%5D`
-            : `${condition.column}%3A${encodeURIComponent(condition.query)}`;
-          return queryString;
-        } else if (condition.column) {
-          // Normal encoding for other columns
-          return `${condition.column}%20%3A%20${encodeURIComponent(condition.query)}`;
+        if (condition.column) {
+          return `${condition.column}%3A${encodeURIComponent(condition.query)}`;
         } else {
           return `${encodeURIComponent(condition.query)}`;
         }
@@ -84,7 +74,6 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       }
       const data = await response.json();
   
-      console.log('API Response:', data);
       setTotalResults(data.total_results);
       setSearchResults(data.results);
       setSearchTime(currentTime);
@@ -98,14 +87,19 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       // Update query history if it's not already present
       if (!queryHistory.includes(readableQueryString)) {
         let updatedQueryHistory = [...queryHistory, readableQueryString];
-  
         if (updatedQueryHistory.length > 25) {
-          updatedQueryHistory = updatedQueryHistory.slice(-25); // Keep only the last 25 entries
+          updatedQueryHistory = updatedQueryHistory.slice(-25);
         }
-  
         setQueryHistory(updatedQueryHistory);
         localStorage.setItem('queryHistory', JSON.stringify(updatedQueryHistory));
       }
+  
+      // Reset conditions, selected query, and dropdown states
+      setConditions([{ column: '', query: '', operator: '' }]);
+      setSelectedQuery('');  // Reset Saved Queries dropdown to default
+  
+      // Force re-render to reset the Most Recent Queries dropdown
+      setQueryHistory([...queryHistory]);
   
     } catch (error) {
       console.error('Error fetching search results:', error);
@@ -114,7 +108,6 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       setLoading(false);
     }
   }, [conditions, queryHistory, setPage, setSearchResults, setSearchTime, setTotalResults]);
-  
   
 
   useEffect(() => {
@@ -153,7 +146,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
       .filter(condition => condition.query)
       .map(condition => {
         if (condition.column) {
-          return `${condition.column} : ${condition.query}`;
+          return `${condition.column}:${condition.query}`;  // Save without spaces around the colon
         } else {
           return condition.query;
         }
@@ -183,7 +176,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
     const selectedName = e.target.value;
     const selectedQuery = savedQueries.find(query => query.name === selectedName)?.query || '';
     setSelectedQuery(selectedName);
-    setConditions([{ column: '', query: selectedQuery}]);
+    setConditions([{ column: '', query: selectedQuery }]);
     setSelectedQuery('');
   };
 
@@ -197,10 +190,10 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
         >
           <option value="">Most Recent Queries</option>
           {[...queryHistory].reverse().map((query, index) => (
-  <option key={index} value={query}>
-    {query}
-  </option>
-))}
+            <option key={index} value={query}>
+              {query}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -211,10 +204,10 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
         >
           <option value="">Saved Queries</option>
           {[...savedQueries].reverse().map((query, index) => (
-  <option key={index} value={query.name}>
-    {query.name}
-  </option>
-))}
+            <option key={index} value={query.name}>
+              {query.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -264,10 +257,10 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
         </div>
       ))}
       <button type="submit" disabled={loading}>Search</button>
-      <button type="button" onClick={handleSaveQuery} disabled={loading} style={{ marginBottom: '10px' , marginLeft:"10px" }}>Save Query</button>
+      <button type="button" onClick={handleSaveQuery} disabled={loading} style={{ marginBottom: '10px', marginLeft: "10px" }}>Save Query</button>
       {loading && <p>Loading...</p>}
       {!loading && noResults && <p>No Results Found</p>}
-      
+
       {isPopupVisible && (
         <div style={{
           position: 'fixed',
@@ -298,9 +291,4 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
 }
 
 export default SearchBar;
-
-
-
-
-
 
