@@ -339,7 +339,8 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
     const selectedQuery = e.target.value;
     setSelectedQuery(selectedQuery);
     const conditionQuery = savedQueries.find(query => query.name === selectedQuery)?.query || '';
-    setConditions([{ column: '', query: conditionQuery, operator: 'AND' }]);
+    setConditions([{ column: '', query: conditionQuery }]);
+    setSelectedQuery('');
   };
 
   const handleSaveQuery = () => {
@@ -383,7 +384,8 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
     const selectedName = e.target.value;
     const selectedQuery = savedQueries.find(query => query.name === selectedName)?.query || '';
     setSelectedQuery(selectedName);
-    setConditions([{ column: '', query: selectedQuery, operator: 'AND' }]);
+    setConditions([{ column: '', query: selectedQuery}]);
+    setSelectedQuery('');
   };
 
   return (
@@ -395,11 +397,11 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
           style={{ width: '100%' }}
         >
           <option value="">Most Recent Queries</option>
-          {queryHistory.map((query, index) => (
-            <option key={index} value={query}>
-              {query}
-            </option>
-          ))}
+          {[...queryHistory].reverse().map((query, index) => (
+  <option key={index} value={query}>
+    {query}
+  </option>
+))}
         </select>
       </div>
 
@@ -409,11 +411,11 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage ,
           onChange={handleSavedQueryChange}
         >
           <option value="">Saved Queries</option>
-          {savedQueries.map((query, index) => (
-            <option key={index} value={query.name}>
-              {query.name}
-            </option>
-          ))}
+          {[...savedQueries].reverse().map((query, index) => (
+  <option key={index} value={query.name}>
+    {query.name}
+  </option>
+))}
         </select>
       </div>
 
