@@ -1,7 +1,7 @@
 import SearchBar from './Components/SearchBar';
 import ResultsTable from './Components/ResultsTable';
 import React, { useState } from'react';
-import Notebutton from './Components/NoteButton';
+// import Notebutton from './Components/NoteButton';
 import './App.css';
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
       <header className="App-header">
         <h2>Global Search - EPMO</h2>
       </header>
-      <Notebutton/>
+      {/* <Notebutton/> */}
       <SearchBar setSearchTime={setSearchTime}  setSearchResults={setSearchResults} setTotalResults={setTotalResults} setPage={setPage} page={page} />
       <ResultsTable  searchResults={searchResults} searchTime={searchTime} totalResults={totalResults} page={page}  fetchResults={fetchResults}/>
     </div>
