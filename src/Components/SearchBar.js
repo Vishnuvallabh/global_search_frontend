@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, page }) {
+function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage }) {
   const [columns, setColumns] = useState([]);
   const [conditions, setConditions] = useState([{ column: '', query: '', operator: '' }]);
   const [loading, setLoading] = useState(false);
@@ -13,6 +13,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
     return storedSavedQueries ? JSON.parse(storedSavedQueries) : [];
   });
   const [selectedQuery, setSelectedQuery] = useState('');
+  const [selectedSavedQuery, setSelectedSavedQuery] = useState(''); // Separate state for Saved Queries dropdown
   const [noResults, setNoResults] = useState(false);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [queryName, setQueryName] = useState('');
@@ -20,10 +21,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
   useEffect(() => {
     fetch('http://127.0.0.1:5000/api/columns')
       .then(response => response.json())
-      .then(data => {
-        const columnNames = data.GlobalSearchData || [];
-        setColumns(columnNames);
-      })
+      .then(data => setColumns(data.GlobalSearchData || []))
       .catch(error => console.error('Error fetching columns:', error));
   }, []);
 
@@ -41,19 +39,17 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
     setPage(page);
     const currentTime = new Date().toLocaleString();
   
-    // Create a human-readable query string for display and saving (remove space around colon)
     const readableQueryString = conditions
       .filter(condition => condition.query)
       .map(condition => {
         if (condition.column) {
-          return `${condition.column}:${condition.query}`;  // No space before/after colon
+          return `${condition.column}:${condition.query}`;
         } else {
           return condition.query;
         }
       })
       .join(` ${conditions[0]?.operator || 'AND'} `);
   
-    // Construct API query string (same format, just encoded for the URL)
     const apiQueryString = conditions
       .filter(condition => condition.query)
       .map(condition => {
@@ -84,7 +80,6 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
         setNoResults(false);
       }
   
-      // Update query history if it's not already present
       if (!queryHistory.includes(readableQueryString)) {
         let updatedQueryHistory = [...queryHistory, readableQueryString];
         if (updatedQueryHistory.length > 25) {
@@ -94,11 +89,8 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
         localStorage.setItem('queryHistory', JSON.stringify(updatedQueryHistory));
       }
   
-      // Reset conditions, selected query, and dropdown states
-      setConditions([{ column: '', query: '', operator: '' }]);
-      setSelectedQuery('');  // Reset Saved Queries dropdown to default
-  
-      // Force re-render to reset the Most Recent Queries dropdown
+      // Reset Saved Queries dropdown to default
+      setSelectedSavedQuery('');
       setQueryHistory([...queryHistory]);
   
     } catch (error) {
@@ -108,19 +100,6 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
       setLoading(false);
     }
   }, [conditions, queryHistory, setPage, setSearchResults, setSearchTime, setTotalResults]);
-  
-
-  useEffect(() => {
-    const fetchListener = (event) => {
-      fetchResults(event.detail);
-    };
-
-    document.addEventListener('fetchResults', fetchListener);
-
-    return () => {
-      document.removeEventListener('fetchResults', fetchListener);
-    };
-  }, [fetchResults, conditions, queryHistory]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -130,7 +109,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
   const handleDropdownChange = (e) => {
     const selectedQuery = e.target.value;
     setSelectedQuery(selectedQuery);
-    const conditionQuery = savedQueries.find(query => query.name === selectedQuery)?.query || '';
+    const conditionQuery = queryHistory.find(query => query === selectedQuery) || '';
     setConditions([{ column: '', query: conditionQuery }]);
     setSelectedQuery('');
   };
@@ -146,7 +125,7 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
       .filter(condition => condition.query)
       .map(condition => {
         if (condition.column) {
-          return `${condition.column}:${condition.query}`;  // Save without spaces around the colon
+          return `${condition.column}:${condition.query}`;
         } else {
           return condition.query;
         }
@@ -175,9 +154,18 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
   const handleSavedQueryChange = (e) => {
     const selectedName = e.target.value;
     const selectedQuery = savedQueries.find(query => query.name === selectedName)?.query || '';
-    setSelectedQuery(selectedName);
+    setSelectedSavedQuery(selectedName);
     setConditions([{ column: '', query: selectedQuery }]);
-    setSelectedQuery('');
+    setSelectedSavedQuery('');
+  };
+
+  const handleReset = () => {
+    // Reset conditions to default (clear all fields)
+    setConditions([{ column: '', query: '', operator: '' }]);
+
+    // Reset "Most Recent Queries" and "Saved Queries" dropdowns to default values
+    setSelectedQuery('');  // Reset the Recent Queries dropdown
+    setSelectedSavedQuery('');  // Reset the Saved Queries dropdown
   };
 
   return (
@@ -199,8 +187,9 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
 
       <div style={{ marginBottom: '10px' }}>
         <select
-          style={{ width: '100%' }}
+          value={selectedSavedQuery}
           onChange={handleSavedQueryChange}
+          style={{ width: '100%' }}
         >
           <option value="">Saved Queries</option>
           {[...savedQueries].reverse().map((query, index) => (
@@ -257,7 +246,8 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
         </div>
       ))}
       <button type="submit" disabled={loading}>Search</button>
-      <button type="button" onClick={handleSaveQuery} disabled={loading} style={{ marginBottom: '10px', marginLeft: "10px" }}>Save Query</button>
+      <button type="button" onClick={handleSaveQuery} disabled={loading} style={{ marginLeft: "10px" }}>Save Query</button>
+      <button type="button" onClick={handleReset} style={{ marginLeft: "10px" }}>Reset</button>
       {loading && <p>Loading...</p>}
       {!loading && noResults && <p>No Results Found</p>}
 
@@ -267,23 +257,21 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          backgroundColor: 'white',
           padding: '20px',
-          border: '1px solid black',
-          zIndex: 1000
+          backgroundColor: 'white',
+          border: '1px solid #ccc',
+          zIndex: 1000,
         }}>
           <h4>Save Query</h4>
           <input
             type="text"
             value={queryName}
             onChange={(e) => setQueryName(e.target.value)}
-            placeholder="Enter a name for the query..."
+            placeholder="Enter name for saved query..."
             style={{ width: '100%', marginBottom: '10px' }}
           />
-          <div>
-            <button onClick={handleSaveQueryConfirm}>Save</button>
-            <button onClick={handleSaveQueryCancel}>Cancel</button>
-          </div>
+          <button onClick={handleSaveQueryConfirm}>Save</button>
+          <button onClick={handleSaveQueryCancel} style={{ marginLeft: '10px' }}>Cancel</button>
         </div>
       )}
     </form>
@@ -291,4 +279,3 @@ function SearchBar({ setSearchTime, setSearchResults, setTotalResults, setPage, 
 }
 
 export default SearchBar;
-
