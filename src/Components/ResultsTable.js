@@ -224,7 +224,7 @@ function ResultsTable({ searchResults, searchTime, totalResults, page, fetchResu
   const getHeaders = (results) => {
     if (results.length === 0) return [];
     const keys = Object.keys(results[0]);
-    return keys.slice(0, 6); // Get the first 6 keys
+    return keys.slice(0, 5); // Get the first 6 keys
   };
 
   const headers = getHeaders(searchResults); // Dynamically generated headers from the response
